@@ -1,0 +1,53 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "location": {
+      "type": "string",
+      "defaultValue": "[resourceGroup().location]"
+    },
+    "galleryName": {
+      "type": "string"
+    },
+    "name": {
+      "type": "string"
+    },
+    "description": {
+      "type": "string",
+      "defaultValue": "Gallery Image"
+    }
+  },
+  "resources": [
+    {
+      "apiVersion": "2018-06-01",
+      "type": "Microsoft.Compute/galleries/images",
+      "name": "[concat(parameters('galleryName'),'/',parameters('name'))]",
+      "location": "[parameters('location')]",
+      "properties": {
+        "description": "[parameters('description')]",
+        "osType": "Linux",
+        "osState": "Generalized",
+        "endOfLifeDate": "2050-01-01",
+        "identifier": {
+          "publisher": "myPublisher",
+          "offer": "myOffer",
+          "sku": "mySku"
+        },
+        "recommended": {
+          "vCPUs": {
+            "min": 1
+          },
+          "memory": {
+            "min": 2048
+          }
+        },
+        "disallowed": {
+          "diskTypes": [
+            "Premium_LRS",
+            "Standard_LRS"
+          ]
+        }
+      }
+    }
+  ]
+}

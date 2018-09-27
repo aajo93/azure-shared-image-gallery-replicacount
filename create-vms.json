@@ -1,0 +1,123 @@
+{
+  "$schema": "https://schema.management.azure.com/schemas/2015-01-01/deploymentTemplate.json#",
+  "contentVersion": "1.0.0.0",
+  "parameters": {
+    "imageId": {
+      "type": "string"
+    },
+    "numberOfInstances": {
+      "type": "int",
+      "defaultValue": 16,
+      "minValue": 1,
+      "maxValue": 1024,
+      "metadata": {
+        "description": "Number of VMs to deploy"
+      }
+    },
+    "deploymentName": {
+      "type": "string"
+    },
+    "subnetId": {
+      "type": "string"
+    },
+    "vmSize": {
+      "type": "string",
+      "defaultValue": "Standard_D2_v2"
+    },
+    "adminUserName": {
+      "defaultValue": "azureuser",
+      "type": "string"
+    },
+    "adminPassword": {
+      "type": "securestring"
+    }
+  },
+  "variables": {
+    "diskAccountType": "Standard_LRS"
+  },
+  "resources": [
+    {
+      "apiVersion": "2017-03-01",
+      "type": "Microsoft.Network/networkInterfaces",
+      "name": "[concat('my_nic_', parameters('deploymentName'), '_', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "my_vm_group_id": "[concat(parameters('deploymentName'), '_', copyindex())]"
+      },
+      "copy": {
+        "name": "nicloop",
+        "count": "[parameters('numberOfInstances')]"
+      },
+      "properties": {
+        "ipConfigurations": [
+          {
+            "name": "primary",
+            "properties": {
+              "privateIPAllocationMethod": "Dynamic",
+              "subnet": {
+                "id": "[parameters('subnetId')]"
+              }
+            }
+          }
+        ],
+        "enableAcceleratedNetworking": true
+      }
+    },
+    {
+      "apiVersion": "2018-04-01",
+      "type": "Microsoft.Compute/virtualMachines",
+      "name": "[concat('my_vm_', parameters('deploymentName'), '_', copyindex())]",
+      "location": "[resourceGroup().location]",
+      "tags": {
+        "my_vm_group_id": "[concat(parameters('deploymentName'), '_', copyindex())]",
+        "tag1": "value1_1234567890abcdefghijklmnopqrstuwxyz",
+        "tag2": "value1_1234567890abcdefghijklmnopqrstuwxyz",
+        "tag3": "value1_1234567890abcdefghijklmnopqrstuwxyz",
+        "tag4": "value1_1234567890abcdefghijklmnopqrstuwxyz",
+        "tag5": "value1_1234567890abcdefghijklmnopqrstuwxyz",
+        "tag6": "value1_1234567890abcdefghijklmnopqrstuwxyz"
+      },
+      "copy": {
+        "name": "vmloop",
+        "count": "[parameters('numberOfInstances')]"
+      },
+      "dependsOn": [
+        "[concat('Microsoft.Network/networkInterfaces/', 'my_nic_', parameters('deploymentName'), '_', copyindex())]"
+      ],
+      "properties": {
+        "hardwareProfile": {
+          "vmSize": "[parameters('vmSize')]"
+        },
+        "storageProfile": {
+          "imageReference": {
+            "id": "[parameters('imageId')]"
+          },
+          "osDisk": {
+            "osType": "Linux",
+            "name": "[concat('my_vm_disk_', parameters('deploymentName'), '_', copyindex())]",
+            "createOption": "FromImage",
+            "caching": "ReadWrite",
+            "managedDisk": {
+              "storageAccountType": "[variables('diskAccountType')]"
+            }
+          }
+        },
+        "osProfile": {
+          "computerName": "[concat('myvm-', replace(parameters('deploymentName'),'_','-'), '-', copyindex())]",
+          "adminUsername": "[parameters('adminUserName')]",
+          "adminPassword": "[parameters('adminPassword')]"
+        },
+        "networkProfile": {
+          "networkInterfaces": [
+            {
+              "id": "[resourceId('Microsoft.Network/networkInterfaces', concat('my_nic_', parameters('deploymentName'), '_', copyindex()))]",
+              "properties": {
+                "primary": true
+              }
+            }
+          ]
+        }
+      }
+    }
+  ]
+}
